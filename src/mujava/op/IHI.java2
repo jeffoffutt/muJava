@@ -1,0 +1,137 @@
+package MYS.op;
+
+import openjava.mop.*;
+import openjava.ptree.*;
+import openjava.ptree.util.*;
+import MYS.op.*;
+import java.io.*;
+import MYS.MutationSystem;
+import MYS.op.util.DeclAnalyzer
+
+public class IHI extends DeclAnalyzer
+{
+    int num = 0;
+
+    public void translateDefinition(CompilationUnit comp_unit)
+        throws openjava.mop.MOPException
+    {
+	OJClass parent_class = getSuperclass();
+	OJField[] fields = getDeclaredFields();
+	OJField[] parent_fields = parent_class.getAllFields();
+
+	boolean exist_flag;
+
+	for(int i=0; i<parent_fields.length; ++i){
+	  exist_flag = false;
+	  for(int j=0;j<fields.length;++j){
+	    if(equal(parent_fields[i],fields[j])){
+	      exist_flag=true;
+	      break;
+	    }
+	  }
+
+	  if(!exist_flag){
+	    try{
+	      ModifierList modlist = new ModifierList();
+	      OJModifier modif = parent_fields[i].getModifiers();
+	      TypeName tname = TypeName.forOJClass( parent_fields[i].getType() );
+	      modlist.add( modif.toModifier() );
+	      String name = parent_fields[i].getName();
+	      FieldDeclaration mutant
+		= new FieldDeclaration( modlist, tname, name, null );
+	      outputToFile(comp_unit,mutant);
+	    }catch(Exception ex){
+	      System.err.println("[Exception]  "+ex);
+	    }
+	  }
+	}
+    }
+
+    public boolean equal(OJField f1,OJField f2){
+      return (f1.getName().equals( f2.getName() ))
+		    && (f1.getType() == f2.getType());
+    }
+
+    public String getSourceName(OJClass clazz){
+      String name;
+      name = MutationSystem.getPrefix()+clazz.getName()+"_"+this.num+".java";
+      return name;
+    }
+
+    public String getClassName(OJClass clazz){
+      String name;
+      name = MutationSystem.getPrefix()+clazz.getName()+"_"+this.num;
+      return name;
+    }
+
+    public void outputToFile(CompilationUnit comp_unit,FieldDeclaration mutant){
+      String f_name,c_name;
+      num++;
+      f_name = getSourceName(this);
+      c_name = getClassName(this);
+
+      if (comp_unit==null) return;
+      File outfile = null;
+      try {
+	outfile = new File(MutationSystem.MUTANT_SRC_PATH,f_name);
+	FileWriter fout = new FileWriter( outfile );
+	PrintWriter out = new PrintWriter( fout );
+
+	//================================================
+	IHI_Writer writer = new IHI_Writer( out );
+	//================================================
+
+	writer.setClassName(c_name);
+	writer.setMutant(mutant);
+	//writer.setDebugLevel( 0 );
+	comp_unit.accept( writer );
+	out.flush();  out.close();
+      } catch ( IOException e ) {
+	System.err.println( "fails to create " + outfile );
+      } catch ( ParseTreeException e ) {
+	System.err.println( "errors during printing " + outfile );
+	e.printStackTrace();
+      }
+   }
+
+/*
+    public void outputToFile(CompilationUnit comp_unit,FieldDeclaration mutant){
+      String f_name,c_name;
+      num++;
+      f_name = MutationSystem.getPrefix()+"IHI_"+num+".java";
+      c_name = MutationSystem.getPrefix()+"IHI_"+num;
+      if (comp_unit==null) return;
+      File outfile = null;
+      try {
+	outfile = new File(MutationSystem.MUTANT_SRC_PATH,f_name);
+	FileWriter fout = new FileWriter( outfile );
+	PrintWriter out = new PrintWriter( fout );
+
+	//================================================
+	IHI_Writer writer = new IHI_Writer( out );
+	//================================================
+
+	writer.setClassName(c_name);
+	writer.setMutant(mutant);
+	//writer.setDebugLevel( 0 );
+	comp_unit.accept( writer );
+	out.flush();  out.close();
+      } catch ( IOException e ) {
+	System.err.println( "fails to create " + outfile );
+      } catch ( ParseTreeException e ) {
+	System.err.println( "errors during printing " + outfile );
+	e.printStackTrace();
+      }
+   }
+*/
+    public IHI( openjava.mop.Environment oj_param0, openjava.mop.OJClass oj_param1, openjava.ptree.ClassDeclaration oj_param2 )
+    {
+        super( oj_param0, oj_param1, oj_param2 );
+    }
+
+    public IHI( java.lang.Class oj_param0, openjava.mop.MetaInfo oj_param1 )
+    {
+        super( oj_param0, oj_param1 );
+    }
+
+}
