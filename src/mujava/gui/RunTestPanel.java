@@ -20,15 +20,20 @@ package mujava.gui;
 
 import java.awt.*;
 import java.awt.event.*;
+
 import javax.swing.*;
 import javax.swing.table.*;
 import javax.swing.border.*;
+
 import mujava.gui.util.*;
+
 import java.io.*;
+
 import mujava.MutationSystem;
 import mujava.TestExecuter;
 import mujava.util.*;
 import mujava.test.*;
+
 import java.util.Vector;
 
 /**
@@ -49,6 +54,10 @@ public class RunTestPanel extends JPanel implements ActionListener
    //The bug is fixed by Nan Li
    //Updated on Dec. 5 2011
    int timeout_secs = 3000;
+   
+   // add customized timeout setting
+   // Lin, 05232015
+   int customized_time = 3000;
  
    JTable cmTable;
    JTable tmTable;
@@ -57,6 +66,11 @@ public class RunTestPanel extends JPanel implements ActionListener
    JComboBox classCB;
    JComboBox methodCB; 
    JComboBox timeCB;
+   
+   // add a new textfield for customized timeout
+   JTextField timeoutTextField;
+   boolean isCustomizedTimeout = false;
+   
    JList cLiveList = new JList();
    JList tLiveList = new JList();
    JList cKilledList = new JList();
@@ -221,7 +235,7 @@ public class RunTestPanel extends JPanel implements ActionListener
       selectConstraints.gridx = 0;
       selectConstraints.gridy = 2;
       selectConstraints.gridwidth = 1;
-      JLabel label2 = new JLabel("TestCase: ", JLabel.RIGHT);
+      JLabel label2 = new JLabel("TestCase  : ", JLabel.RIGHT);
       label2.setPreferredSize(new Dimension(100, 28));
       label2.setMaximumSize(new Dimension(100, 28));
       selectPanel.add(label2, selectConstraints);
@@ -255,7 +269,7 @@ public class RunTestPanel extends JPanel implements ActionListener
       label_time.setMaximumSize(new Dimension(100, 28));
       selectPanel.add(label_time, selectConstraints);
   
-      String[] time_list = {"3 seconds", "5 seconds", "10 seconds"};
+      String[] time_list = {"3 seconds", "5 seconds", "10 seconds", "Other"};
 	  timeCB = new JComboBox(time_list);
       timeCB.addActionListener(new java.awt.event.ActionListener()
       {
@@ -265,13 +279,31 @@ public class RunTestPanel extends JPanel implements ActionListener
          }
       });
 
+      timeoutTextField = new JTextField();
+      timeoutTextField.setHorizontalAlignment(JTextField.CENTER);
+      
+      // adjust the gui to have a textfield for customized timeout
+      // Lin 05232015
       selectConstraints.gridx = 1;
       selectConstraints.gridy = 3;
-      selectConstraints.gridwidth = 2;
-      timeCB.setPreferredSize(new Dimension(400, 28));
-      timeCB.setMaximumSize(new Dimension(400, 28));
+//      selectConstraints.gridwidth = 2;
+      timeCB.setPreferredSize(new Dimension(320, 28));
+      timeCB.setMaximumSize(new Dimension(320, 28));
       selectPanel.add(timeCB, selectConstraints);
+      
 
+      timeoutTextField.setPreferredSize(new Dimension(74, 28));
+      timeoutTextField.setMaximumSize(new Dimension(74, 28));
+      timeoutTextField.setEnabled(false);
+      timeoutTextField.setText("3");
+      selectConstraints.gridx = 2;
+      selectConstraints.gridy = 3;
+      selectPanel.add(timeoutTextField, selectConstraints);
+//      
+      selectConstraints.gridx = 3;
+      selectConstraints.gridy = 3;
+      selectPanel.add(new JLabel("s"), selectConstraints);
+      
       c.gridx = 1;
       c.gridy = 0;
       this.add(selectPanel, c);
@@ -425,6 +457,22 @@ public class RunTestPanel extends JPanel implements ActionListener
 
    void testRunB_mouseClicked(MouseEvent e)
    {
+	   // check if the customized timeout is used
+	   // added by Lin, 05/23/2015
+		if (isCustomizedTimeout) {
+			try {
+				timeout_secs = 1000*Integer.parseInt(timeoutTextField.getText());
+				// what if a negative or zero, set it to 3000
+				if (timeout_secs <= 0) {
+					timeout_secs = 3000;
+				}
+
+			} catch (NumberFormatException ex) {
+				// if not a number, set to be 3000
+				timeout_secs = 3000;
+			}
+		}
+	   	   
       // class name whose mutants are executed
       Object targetClassObj = classCB.getSelectedItem();
       // class name whose mutants are executed
@@ -554,16 +602,31 @@ public class RunTestPanel extends JPanel implements ActionListener
       String tstr = timeCB.getSelectedItem().toString();
       if (tstr.equals("3 seconds"))
       {
+    	  timeoutTextField.setEnabled(false);
+    	  timeoutTextField.setText("3");
+    	  isCustomizedTimeout = false;
          timeout_secs = 3000;
       } 
       else if (tstr.equals("5 seconds"))
       {
+    	  timeoutTextField.setEnabled(false);
+    	  timeoutTextField.setText("5");
+    	  isCustomizedTimeout = false;
          timeout_secs = 5000;
       }
       else if (tstr.equals("10 seconds"))
       {
+    	  timeoutTextField.setEnabled(false);
+    	  timeoutTextField.setText("10");
+    	  isCustomizedTimeout = false;
          timeout_secs = 10000;
 	  }
+      else if (tstr.equals("Other"))
+      {
+    	  timeoutTextField.setEnabled(true);
+    	  isCustomizedTimeout = true;
+    	  //timeout_secs = customized_time;
+      }
    } 
 
    void showTraditionalMutants()

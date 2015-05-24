@@ -436,7 +436,7 @@ public class TestExecuter {
         	//System.out.println("check point4");
           t.interrupt();
           //mutant_result = "time_out: more than " + TIMEOUT + " seconds";
-          System.out.println(" time_out: more than " + TIMEOUT + " seconds");
+          System.out.println(" time_out: more than " + TIMEOUT + " milliseconds");
          // mutantResults.put(nameOfTest, nameOfTest + ": " + lineNumber + "; " + failure.getMessage());
           
     	  for(int k = 0;k < testCases.length;k++){
@@ -446,7 +446,7 @@ public class TestExecuter {
             		//System.out.println("name: " + testCases[k].getName() + annotation.toString() + annotation.toString().indexOf("@org.junit.Test"));
             		if(annotation.toString().indexOf("@org.junit.Test") != -1){
                 		//killed_mutants[k]= "";   // At first, no mutants are killed by each test case
-            			mutantResults.put(testCases[k].getName(), "time_out: more than " + TIMEOUT + " seconds");
+            			mutantResults.put(testCases[k].getName(), "time_out: more than " + TIMEOUT + " milliseconds");
                 		continue;
                 	}
             	}

@@ -102,10 +102,9 @@ class runmutesCom {
 	  @Parameter(names = "--help", help = true)
 	  private boolean help;
 	  
-	  
-	  
-	  
-	  
+	  // add timeout option
+	  @Parameter(names = "-timeout", arity = 1, description = "Customized timeout")
+	  private int timeout = -1; 
 	  
 	public boolean isEquiv() {
 		return equiv;
@@ -339,6 +338,15 @@ class runmutesCom {
 		ODL = oDL;
 	}
 	
+	// add argument for customized timeout
+	public int getTimeout()
+	{
+		return timeout;
+	}
+	public void setTimeout(int Timeout)
+	{
+		this.timeout = Timeout;
+	}
 	
 	  
 	}

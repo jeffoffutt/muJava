@@ -39,6 +39,8 @@ import java.util.Vector;
 
 
 
+
+
 import com.beust.jcommander.JCommander;
 
 import mujava.MutationSystem;
@@ -119,6 +121,9 @@ public class runmutes {
 	public static String muJavaHomePath = new String();
 	public static boolean isSingleTestSet = true;
 	public static boolean runEq = false;
+	
+	//default timeout
+	private static int timeout_sec = 3000;
 
 	/**
 	 * @param args
@@ -127,7 +132,7 @@ public class runmutes {
 	public static void main(String[] args) throws Exception {
 		runmutesCom jct = new runmutesCom();
 		// dev only
-		String[] argv = { "-all", "-fresh", "-debug", "date_plusTest", "date_plus" };
+		String[] argv = { "-all", "-fresh", "-debug", "for_oldTest", "testTimeout" ,"-timeout", "3000" };
 
 		JCommander jCommander = new JCommander(jct, args);
 
@@ -141,7 +146,21 @@ public class runmutes {
 		if (jct.isDebug()) {
 			Util.debug = true;
 		}
+		
+		// add support for timeout
+		// Lin 05232015
+		if (jct.getTimeout() == -1)
+		// -1 means there is no input for timeout
+		// then do nothing, just use the default one
+		{
 
+		} else { // if there IS an option for timeout
+			timeout_sec = jct.getTimeout();
+			if (timeout_sec <= 0) 
+				// if not a valid timeout, make it 3000
+				timeout_sec = 3000;
+		}
+		
 		// if only one parameter, it must be the session name
 		// then, no testset specified, run all tests in testset folder
 		List<String> testSetList = new ArrayList<>();
@@ -377,8 +396,10 @@ public class runmutes {
 
 	}
 
-	private static boolean hasTestFile(File[] listOfFiles, String testSetName) {
+	private static boolean hasTestFile(File[] listOfFiles, String testSetName) throws Exception {
 
+		if (listOfFiles == null)
+			throw new Exception("invalid test folder");
 		for (File file : listOfFiles) {
 			if (file.getName().equals(testSetName + ".class"))
 				return true;
@@ -412,7 +433,7 @@ public class runmutes {
 			// mode="fresh-default";
 			// Util.Print("no file mode");
 			TestExecuterCLI test_engine = new TestExecuterCLI(targetClassName);
-			test_engine.setTimeOut(3000);
+			test_engine.setTimeOut(timeout_sec);
 
 			// add method list to engine, used for saving result at the end
 			test_engine.methodList = new ArrayList<>();
@@ -465,7 +486,7 @@ public class runmutes {
 
 			// run
 			TestExecuterCLI test_engine = new TestExecuterCLI(targetClassName);
-			test_engine.setTimeOut(3000);
+			test_engine.setTimeOut(timeout_sec);
 
 			// First, read (load) test suite class.
 			Util.DebugPrint(targetClassName + " " + testSetName);
@@ -511,7 +532,7 @@ public class runmutes {
 
 			// run
 			TestExecuterCLI test_engine = new TestExecuterCLI(targetClassName);
-			test_engine.setTimeOut(3000);
+			test_engine.setTimeOut(timeout_sec);
 
 			// First, read (load) test suite class.
 			Util.DebugPrint(targetClassName + " " + testSetName);

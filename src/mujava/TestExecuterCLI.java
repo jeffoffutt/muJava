@@ -59,7 +59,7 @@ import org.junit.runners.*;
 
 public class TestExecuterCLI extends TestExecuter {
 	
-	int TIMEOUT = 3000;
+//	int TIMEOUT = 3000;
 	public static ArrayList<String> methodList = new ArrayList<>();
 	public static ArrayList<String> methodList2 = new ArrayList<>();
 
