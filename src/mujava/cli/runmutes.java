@@ -132,7 +132,7 @@ public class runmutes {
 	public static void main(String[] args) throws Exception {
 		runmutesCom jct = new runmutesCom();
 		// dev only
-		String[] argv = { "-all", "-fresh", "-debug", "for_oldTest", "testTimeout" ,"-timeout", "3000" };
+		String[] argv = { "-all", "-fresh", "-debug", "for_oldTest", "testTimeout" ,"-timeout", "3" };
 
 		JCommander jCommander = new JCommander(jct, args);
 
@@ -155,7 +155,7 @@ public class runmutes {
 		{
 
 		} else { // if there IS an option for timeout
-			timeout_sec = jct.getTimeout();
+			timeout_sec = 1000 * jct.getTimeout();
 			if (timeout_sec <= 0) 
 				// if not a valid timeout, make it 3000
 				timeout_sec = 3000;
