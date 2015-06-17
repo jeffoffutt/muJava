@@ -503,7 +503,7 @@ public class MutationSystem extends OJSystem
          } catch (ClassNotFoundException e)  
          {
             System.err.println(" Can't find the class: " + classes[i]);
-            System.err.println(" Please check CLASSPATH " );
+            System.err.println(" Please check that the compiled class for the code you want to mutate is in the classes/ directory. Also check that the MuJava_HOME variable in mujava.config does not end with a trailing slash. " );
 		    bad[i] = true; 
 		    classInfo[i] = new InheritanceINFO(classes[i], "");
             Runtime.getRuntime().exit(0);
