@@ -66,7 +66,14 @@ public class GenMutantsMain extends JFrame
       MutationSystem.setJMutationStructure();
       MutationSystem.recordInheritanceRelation();
       GenMutantsMain main = new GenMutantsMain();
-      main.pack();
+      try {
+	  main.pack();
+      }
+      catch (NullPointerException e) {
+	  System.err.println("An error occurred while initializing muJava. This may have happened because the files used by muJava are in an unexpected state. Try deleting any uncompiled mutants that were generated in the result/ directory, and then re-generate them.");
+	  e.printStackTrace();
+	  return;
+      }
       main.setVisible(true);
    } 
 
