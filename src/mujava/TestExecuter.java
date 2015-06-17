@@ -310,6 +310,11 @@ public class TestExecuter {
 
       
       } 
+	  catch (NoClassDefFoundError e) {
+	      System.err.println("Could not find one of the necessary classes for running tests. Make sure that .jar files for hamcrest and junit are in your classpath.");
+	      e.printStackTrace();
+	      break;
+	  }
        catch(Exception e){
     	   System.out.println(e.getMessage());
     	   e.printStackTrace();
