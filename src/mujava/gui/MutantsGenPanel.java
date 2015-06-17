@@ -391,7 +391,7 @@ public class MutantsGenPanel extends JPanel
       String[] file_list = fTableModel.getSelectedFiles();
       if (file_list == null || file_list.length == 0)
       {
-         System.err.println("[ERROR] No class is selected.");
+         System.err.println("[ERROR] No class is selected. Please select one or more .java files for which you'd like to generate mutants.");
          return;
       }
       
@@ -405,7 +405,7 @@ public class MutantsGenPanel extends JPanel
       if ( (class_ops == null || class_ops.length == 0) && 
            (traditional_ops == null || traditional_ops.length == 0) )
       {
-         System.out.println("[Error] no operators is selected. "); 
+         System.out.println("[ERROR] No operators are selected. Please select one or more mutation operators."); 
          return;
       }
       
