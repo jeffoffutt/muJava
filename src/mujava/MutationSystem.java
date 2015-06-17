@@ -471,8 +471,8 @@ public class MutationSystem extends OJSystem
       
       if (classes == null)
       {
-         System.err.println("[ERROR] There is no classes to apply mutation.");
-         System.err.println(" Pleas check the directory  " + MutationSystem.CLASS_PATH);
+         System.err.println("[ERROR] There are no classes to mutate.");
+         System.err.println(" Please check the directory  " + MutationSystem.CLASS_PATH + " and be sure that MuJava_HOME is set correctly (without a trailing slash) in mujava.config.");
          Runtime.getRuntime().exit(0);
       }
       classInfo = new InheritanceINFO[classes.length];
