@@ -364,7 +364,8 @@ public abstract class MutantsGenerator
       }
       catch (UnsupportedClassVersionError e)
       {
-	  System.err.println("Unable to use the OpenJava Parser because the class version is unsupported. It may be that the openjava.jar file was compiled with a version of Java later than the one you're using.");
+	  System.err.println("[ERROR] Unable to use the OpenJava Parser because the class version is unsupported. It may be that the openjava.jar file was compiled with a version of Java later than the one you're using.");
+	  System.err.println();
 	  e.printStackTrace();
 	  return null;
       }
@@ -527,7 +528,7 @@ public abstract class MutantsGenerator
          Main.compile(pars);
       }
       catch (NoClassDefFoundError e) {
-	  System.err.println("Could not compile the generated mutants. Make sure that tools.jar is in your classpath.");
+	  System.err.println("[ERROR] Could not compile the generated mutants. Make sure that tools.jar is in your classpath.");
 	  System.err.println("You may also need to delete the mutants that were generated (but not compiled) in the result/ directory of the muJava installation.");
 	  System.err.println();
 	  e.printStackTrace();

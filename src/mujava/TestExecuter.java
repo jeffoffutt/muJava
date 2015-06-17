@@ -178,7 +178,9 @@ public class TestExecuter {
           }
           reader.close();
         }catch(Exception e){
-          System.err.println("Error in update() in TraditioanlMutantsViewerPanel.java");
+          System.err.println("[WARNING] A problem occurred when running the traditional mutants:");
+	  System.err.println();
+	  e.printStackTrace();
         }
     }else{
       MutationSystem.MUTANT_PATH = original_mutant_path + "/" + methodSignature;
@@ -313,7 +315,7 @@ public class TestExecuter {
 	  catch (NoClassDefFoundError e) {
 	      System.err.println("Could not find one of the necessary classes for running tests. Make sure that .jar files for hamcrest and junit are in your classpath.");
 	      e.printStackTrace();
-	      break;
+	      return;
 	  }
        catch(Exception e){
     	   System.out.println(e.getMessage());
