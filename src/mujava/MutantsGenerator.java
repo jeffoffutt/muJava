@@ -362,6 +362,12 @@ public abstract class MutantsGenerator
          System.err.println( "File " + file + " not found." );
          return null;
       }
+      catch (UnsupportedClassVersionError e)
+      {
+	  System.err.println("Unable to use the OpenJava Parser because the class version is unsupported. It may be that the openjava.jar file was compiled with a version of Java later than the one you're using.");
+	  System.err.println();
+	  e.printStackTrace();
+      }
       
       CompilationUnit result;
       try
