@@ -63,7 +63,14 @@ public class GenMutantsMain extends JFrame
    public static void main (String[] args) throws Exception 
    { 
       System.out.println("The main method starts");
-      MutationSystem.setJMutationStructure();
+      try {
+	  MutationSystem.setJMutationStructure();
+      }
+      catch (NoClassDefFoundError e) {
+	  System.err.println("Could not find one of the classes necessary to run muJava. Make sure that the .jar file for openjava is in your classpath.");
+	  e.printStackTrace();
+	  return;
+      }
       MutationSystem.recordInheritanceRelation();
       GenMutantsMain main = new GenMutantsMain();
       try {
