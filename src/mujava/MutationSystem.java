@@ -471,8 +471,8 @@ public class MutationSystem extends OJSystem
       
       if (classes == null)
       {
-         System.err.println("[ERROR] There is no classes to apply mutation.");
-         System.err.println(" Pleas check the directory  " + MutationSystem.CLASS_PATH);
+         System.err.println("[ERROR] There are no classes to mutate.");
+         System.err.println(" Please check the directory  " + MutationSystem.CLASS_PATH + " and be sure that MuJava_HOME is set correctly (without a trailing slash) in mujava.config.");
          Runtime.getRuntime().exit(0);
       }
       classInfo = new InheritanceINFO[classes.length];
@@ -502,8 +502,8 @@ public class MutationSystem extends OJSystem
             }
          } catch (ClassNotFoundException e)  
          {
-            System.err.println(" Can't find the class: " + classes[i]);
-            System.err.println(" Please check CLASSPATH " );
+            System.err.println("[ERROR] Can't find the class: " + classes[i]);
+            System.err.println("Please check that the compiled class for the code you want to mutate is in the classes/ directory. Also check that the MuJava_HOME variable in mujava.config does not end with a trailing slash. " );
 		    bad[i] = true; 
 		    classInfo[i] = new InheritanceINFO(classes[i], "");
             Runtime.getRuntime().exit(0);
@@ -600,7 +600,7 @@ public class MutationSystem extends OJSystem
          TESTSET_PATH = home_path + "/testset";
       } catch (FileNotFoundException e1)
       {
-         System.err.println(" I can't find mujava.config file");
+         System.err.println("[ERROR] Can't find mujava.config file");
          e1.printStackTrace();
       } catch (Exception e)
       {
@@ -639,7 +639,7 @@ public class MutationSystem extends OJSystem
          TESTSET_PATH = home_path + "/testset";
       } catch (FileNotFoundException e1)
       {
-         System.err.println(" I can't find mujava.config file");
+         System.err.println("[ERROR] Can't find mujava.config file");
          e1.printStackTrace();
       } catch (Exception e)
       {
