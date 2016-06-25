@@ -54,7 +54,7 @@ import com.beust.jcommander.JCommander;
 
 public class genmutes {
 	// static String sessionName = new String();
-	static String muJavaHomePath = new String();
+	public static String muJavaHomePath = new String();
 
 	public static void main(String[] args) throws Exception {
 		// System.out.println("test");
@@ -72,14 +72,22 @@ public class genmutes {
 		// set session name
 		String sessionName = jct.getParameters().get(0);
 
-		muJavaHomePath = Util.loadConfig();
+		//muJavaHomePath = Util.loadConfig();
+		muJavaHomePath="C:/Users/Shreyash/git/muJava/muJavaPlugin/src/mujava";
 		// check if debug mode
 		if (jct.isDebug()) {
 			Util.debug = true;
 		}
 
+		File file1 = new File("C:/Users/Shreyash/git/muJava/muJavaPlugin/src/mujava/session2");
+		System.out.println(file1.exists());
+		
+		System.out.println(muJavaHomePath);
 		// get all existing session name
-		File folder = new File(muJavaHomePath);
+		//File folder = new File(muJavaHomePath);
+		File folder =new File("C:/Users/Shreyash/git/muJava/muJavaPlugin/src/mujava");
+		System.out.println(folder.getAbsolutePath());
+		System.out.println(folder.exists());
 		// check if the config file has defined the correct folder
 		if (!folder.isDirectory()) {
 			Util.Error("ERROR: cannot locate the folder specified in mujava.config");
@@ -247,7 +255,7 @@ public class genmutes {
 		//System.exit(0);
 	}
 
-	private static void setJMutationStructureAndSession(String sessionName) {
+	public static void setJMutationStructureAndSession(String sessionName) {
 
 		// MutationSystem.SYSTEM_HOME
 
@@ -283,8 +291,9 @@ public class genmutes {
 						class_name = class_name + temp.charAt(j);
 					}
 				}
-
-
+				
+				System.out.println("class name="+class_name);
+				
 				int class_type = MutationSystem.getClassType(class_name);
 
 				if (class_type == MutationSystem.NORMAL) { // do nothing
