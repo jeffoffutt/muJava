@@ -12,13 +12,19 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
 
+import com.sun.tools.javac.Main;
+
 import mujava.cli.testnew;
+import mujava.test.OriginalLoader;
+import mujava.MutationSystem;
+import mujava.cli.Util;
 import mujava.cli.genmutes;
 import mujava.cli.runmutes;
 
@@ -32,8 +38,10 @@ public class Plugin {
 	private static String testOracle;
 	private static File combinedMutantFile;
 	private static final String COMBINED_MUTANTS_FILE_NAME = "CombinedMutants";
-	
+
 	private static List<String> methodList = new ArrayList<String>();
+
+	private static Class<? extends Object> combinedMutantsClazz = null;
 
 	private static void parseArgs(String[] args) {
 
@@ -104,6 +112,7 @@ public class Plugin {
 
 	}
 
+	@SuppressWarnings("unused")
 	private static void runTests() {
 
 		String testOracleName = testOracle.substring(testOracle.lastIndexOf(separator) + 1,
@@ -136,13 +145,62 @@ public class Plugin {
 		parseArgs(args);
 
 		createTestSession();
-		
+
 		generateMutants();
-		
-		//runTests();
+
+		// runTests();
 
 		combineMutants();
-	
+
+		compileCombinedMutantsClass();
+
+		invokeMutantMethods();
+
+	}
+
+	private static void invokeMutantMethods() {
+
+		for (Method method : combinedMutantsClazz.getMethods()) {
+
+			if (method.getDeclaringClass().equals(combinedMutantsClazz)) {
+				System.out.println("Method name: " + method.getName()
+						+ " found in CombinedMutants.class! Check for absolute and relative correctness.");
+				
+				
+
+			} else {
+				System.out.println("Method name: " + method.getName() + " found in "
+						+ method.getDeclaringClass().getName() + ". Do Nothing!");
+			}
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	private static void compileCombinedMutantsClass() {
+
+		int status = Main.compile(new String[] { combinedMutantFile.getAbsolutePath() });
+
+		File classFile = null;
+		if (status != 0) {
+			Util.Error("Can't compile src file, please compile manually.");
+		} else {
+			Util.Print("Source file is compiled successfully.");
+
+			classFile = new File(combinedMutantFile.getAbsolutePath().replace(".java", ".class"));
+			try {
+				FileUtils.copyFile(classFile, new File(MutationSystem.CLASS_PATH + separator + classFile.getName()));
+			} catch (IOException e) {
+
+				e.printStackTrace();
+			}
+		}
+
+		try {
+			combinedMutantsClazz = new OriginalLoader().loadClass("CombinedMutants");
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+		System.out.println("CombinedMutants.class loaded successfully");
 	}
 
 	public static void combineMutants() {
@@ -162,7 +220,7 @@ public class Plugin {
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		}
-		
+
 		File[] resultSetBaseDirectory = new File(
 				muJavaHomePath + separator + sessionName + separator + "result" + separator
 						+ baseProgram.substring(baseProgram.lastIndexOf(separator) + 1, baseProgram.lastIndexOf("."))
