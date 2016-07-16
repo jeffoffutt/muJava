@@ -49,7 +49,7 @@ public class testnew {
 		String[] argv = { "Flower", "/Users/dmark/mujava/src/Flower" };
 		new JCommander(jct, args);
 
-		muJavaHomePath = Util.loadConfig();
+		//muJavaHomePath = Util.loadConfig();
 		// muJavaHomePath= "/Users/dmark/mujava";
 
 		// check if debug mode

@@ -141,7 +141,7 @@ public class runmutes {
 		double percentage = 1;
 		String testSessionName = null;
 
-		muJavaHomePath = Util.loadConfig();
+		//muJavaHomePath = Util.loadConfig();
 		// check if debug mode
 		if (jct.isDebug()) {
 			Util.debug = true;

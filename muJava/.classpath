@@ -5,6 +5,6 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
 	<classpathentry kind="lib" path="C:/Users/Shreyash/Downloads/commons-io-2.4-bin/commons-io-2.4/commons-io-2.4.jar"/>
 	<classpathentry kind="lib" path="C:/Program Files/Java/jdk1.8.0_74/lib/tools.jar"/>
-	<classpathentry kind="lib" path="C:/Users/Shreyash/Downloads/muJava-master/muJava-master/openjava.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Shreyash/Downloads/openjava.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

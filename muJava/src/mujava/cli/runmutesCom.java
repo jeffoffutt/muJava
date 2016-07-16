@@ -32,7 +32,7 @@ import com.beust.jcommander.Parameter;
  * @version 1.0
  * 
  */
-class runmutesCom {
+public class runmutesCom {
 	 @Parameter
 	  private List<String> parameters = new ArrayList<String>();
 	 
