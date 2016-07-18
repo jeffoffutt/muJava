@@ -13,6 +13,7 @@ import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -159,14 +160,22 @@ public class Plugin {
 	}
 
 	private static void invokeMutantMethods() {
+		Parameter[] parameters = null;
 
 		for (Method method : combinedMutantsClazz.getMethods()) {
 
 			if (method.getDeclaringClass().equals(combinedMutantsClazz)) {
 				System.out.println("Method name: " + method.getName()
 						+ " found in CombinedMutants.class! Check for absolute and relative correctness.");
-				
-				
+
+				if (parameters == null) {
+					parameters = method.getParameters();
+
+					for (Parameter parameter : parameters) {
+						System.out.println(parameter.getName());
+					}
+
+				}
 
 			} else {
 				System.out.println("Method name: " + method.getName() + " found in "
