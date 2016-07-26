@@ -21,14 +21,11 @@ import java.util.List;
 
 import org.apache.commons.io.FileUtils;
 
-import com.sun.tools.internal.xjc.api.ClassNameAllocator;
 import com.sun.tools.javac.Main;
 
+import bubblesort.test.BubbleSortDataProvider;
+import bubblesort.test.BubbleSortSpecificationProvider;
 import mujava.cli.testnew;
-import mujava.plugin.test.BubbleSortDataProvider;
-import mujava.plugin.test.BubbleSortSpecificationProvider;
-import mujava.plugin.test.DataProvider;
-import mujava.plugin.test.SpecificationProvider;
 import mujava.test.OriginalLoader;
 import mujava.MutationSystem;
 import mujava.cli.Util;
@@ -263,7 +260,8 @@ public class Plugin {
 								&& method.getReturnType().equals(basePMethod.getReturnType())) {
 
 							int[] baseProgramResult = (int[]) basePMethod.invoke(baseProgramClassObject, intArray);
-							strictlyRelativelyCorrectMutant = specs.testForStrictlyRelativeCorrectness(result, baseProgramResult, specificationArray);
+							strictlyRelativelyCorrectMutant = specs.testForStrictlyRelativeCorrectness(result,
+									baseProgramResult, specificationArray);
 						}
 
 					}
@@ -295,10 +293,11 @@ public class Plugin {
 			}
 		}
 
-/*		if (absolutelyCorretMutant) {
-			System.out.println("Mutant " + method.getName() + " selected by Absolute correctness test");
-			return ABSOLUTE_CORRECTNESS_TEST_PASSED;
-		} else*/ 
+		/*
+		 * if (absolutelyCorretMutant) { System.out.println("Mutant " +
+		 * method.getName() + " selected by Absolute correctness test"); return
+		 * ABSOLUTE_CORRECTNESS_TEST_PASSED; } else
+		 */
 		if (strictlyRelativelyCorrectMutant) {
 			System.out.println("Mutant " + method.getName() + " selected by Strict relative correctness test");
 			return STRICT_RELATIVE_CORRECTNESS_TEST_PASSED;
@@ -323,6 +322,7 @@ public class Plugin {
 		 */
 	}
 
+	@SuppressWarnings("unchecked")
 	public static void compileBaseProgram() {
 		int status = Main.compile(new String[] { baseProgram });
 
