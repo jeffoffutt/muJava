@@ -12,6 +12,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
@@ -20,9 +21,14 @@ import java.util.List;
 
 import org.apache.commons.io.FileUtils;
 
+import com.sun.tools.internal.xjc.api.ClassNameAllocator;
 import com.sun.tools.javac.Main;
 
 import mujava.cli.testnew;
+import mujava.plugin.test.BubbleSortDataProvider;
+import mujava.plugin.test.BubbleSortSpecificationProvider;
+import mujava.plugin.test.DataProvider;
+import mujava.plugin.test.SpecificationProvider;
 import mujava.test.OriginalLoader;
 import mujava.MutationSystem;
 import mujava.cli.Util;
@@ -34,6 +40,11 @@ import mujava.cli.runmutes;
  */
 public class Plugin {
 
+	private static final int ABSOLUTE_CORRECTNESS_TEST_PASSED = 0;
+	private static final int RELATIVE_CORRECTNESS_TEST_PASSED = 1;
+	private static final int STRICT_RELATIVE_CORRECTNESS_TEST_PASSED = 2;
+	private static final int NONE_OF_THE_CORRECTNESS_TEST_PASSED = -1;
+
 	private static String operatorString;
 	private static String baseProgram;
 	private static String testOracle;
@@ -43,6 +54,10 @@ public class Plugin {
 	private static List<String> methodList = new ArrayList<String>();
 
 	private static Class<? extends Object> combinedMutantsClazz = null;
+	private static Object combinedMutantClassObject = null;
+
+	private static Class<? extends Object> baseProgramClazz = null;
+	private static Object baseProgramClassObject = null;
 
 	private static void parseArgs(String[] args) {
 
@@ -155,12 +170,25 @@ public class Plugin {
 
 		compileCombinedMutantsClass();
 
+		compileBaseProgram();
+
 		invokeMutantMethods();
 
 	}
 
 	private static void invokeMutantMethods() {
 		Parameter[] parameters = null;
+
+		try {
+			combinedMutantClassObject = combinedMutantsClazz.newInstance();
+			baseProgramClassObject = baseProgramClazz.newInstance();
+		} catch (InstantiationException | IllegalAccessException e1) {
+
+			e1.printStackTrace();
+		}
+
+		SpecificationProvider specs = new BubbleSortSpecificationProvider();
+		DataProvider dataSet = new BubbleSortDataProvider();
 
 		for (Method method : combinedMutantsClazz.getMethods()) {
 
@@ -177,11 +205,149 @@ public class Plugin {
 
 				}
 
+				try {
+
+					switch (doCorrectnessAnalysis(method, dataSet.provideData(), specs)) {
+
+					case ABSOLUTE_CORRECTNESS_TEST_PASSED:
+						break;
+					case STRICT_RELATIVE_CORRECTNESS_TEST_PASSED:
+						break;
+					case RELATIVE_CORRECTNESS_TEST_PASSED:
+						break;
+					}
+					// TODO need to gracefully handle the runtime exceptions
+					// or infinite loops that this method may end up into
+					// due to mutation
+
+				} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+					System.out.println(method.getName() + ":: mutant resulted into exception! Rejecting mutant!!!");
+				}
+
 			} else {
 				System.out.println("Method name: " + method.getName() + " found in "
 						+ method.getDeclaringClass().getName() + ". Do Nothing!");
 			}
 		}
+	}
+
+	private static int doCorrectnessAnalysis(Method method, List<Object> dataSet, SpecificationProvider specs)
+			throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+
+		Object result = null;
+		boolean absolutelyCorretMutant = true;
+		boolean relativelyCorrectMutant = true;
+		boolean strictlyRelativelyCorrectMutant = true;
+
+		for (Object data : dataSet) {
+
+			int[] intArray;
+			if (data instanceof Integer[]) {
+				intArray = new int[((Integer[]) data).length];
+				for (int i = 0; i < intArray.length; i++) {
+					intArray[i] = ((Integer[]) data)[i];
+				}
+				result = method.invoke(combinedMutantClassObject, intArray);
+
+				int[] specificationArray = (int[]) specs.provideSpecification(intArray);
+
+				if (absolutelyCorretMutant) {
+					absolutelyCorretMutant = specs.testForAbsoluteCorrectness(result, specificationArray);
+				}
+
+				if (strictlyRelativelyCorrectMutant) {
+
+					for (Method basePMethod : baseProgramClazz.getMethods()) {
+
+						if (method.getName().contains(basePMethod.getName())
+								&& method.getReturnType().equals(basePMethod.getReturnType())) {
+
+							int[] baseProgramResult = (int[]) basePMethod.invoke(baseProgramClassObject, intArray);
+							strictlyRelativelyCorrectMutant = specs.testForStrictlyRelativeCorrectness(result, baseProgramResult, specificationArray);
+						}
+
+					}
+
+					// strictlyRelativelyCorrectMutant =
+					// specs.testForStrictlyRelativeCorrectness(mutantTestResult,
+					// baseProgramResult, specification)
+
+				}
+
+				if (relativelyCorrectMutant) {
+					// relativelyCorrectMutant =
+					// specs.testForStrictlyRelativeCorrectness(mutantTestResult,
+					// baseProgramResult, specification);
+				}
+
+				// correctness=doCorrectnessAnalysis(intArray, result, specs);
+			} else {
+				Object specificationArray = specs.provideSpecification(data);
+				result = method.invoke(combinedMutantClassObject, data);
+				if (absolutelyCorretMutant) {
+					absolutelyCorretMutant = specs.testForAbsoluteCorrectness(result, specificationArray);
+				}
+				// correctness=doCorrectnessAnalysis(data, result, specs);
+			}
+
+			if (!absolutelyCorretMutant || !strictlyRelativelyCorrectMutant) {
+				break;
+			}
+		}
+
+/*		if (absolutelyCorretMutant) {
+			System.out.println("Mutant " + method.getName() + " selected by Absolute correctness test");
+			return ABSOLUTE_CORRECTNESS_TEST_PASSED;
+		} else*/ 
+		if (strictlyRelativelyCorrectMutant) {
+			System.out.println("Mutant " + method.getName() + " selected by Strict relative correctness test");
+			return STRICT_RELATIVE_CORRECTNESS_TEST_PASSED;
+		}
+		return NONE_OF_THE_CORRECTNESS_TEST_PASSED;
+		/*
+		 * else if (relativelyCorrectMutant) { System.out.println("Mutant " +
+		 * method.getName() +
+		 * " passed relative correctness but failed strict relative correctness. So rejecting it."
+		 * ); return false; }
+		 */
+		// boolean relativelyCorrectMutant =
+		// specs.testForRelativeCorrectness(testResult, baseProgramResult,
+		// specificationArray);
+		/*
+		 * Object specResult = specs.provideSpecification(testData);
+		 * 
+		 * if(specs.compare(specResult, testResult)!= 0){
+		 * 
+		 * } else{ System.out.println(
+		 * "Mutant Passed Absolute correctness test!!!"); }
+		 */
+	}
+
+	public static void compileBaseProgram() {
+		int status = Main.compile(new String[] { baseProgram });
+
+		File classFile = null;
+		if (status != 0) {
+			Util.Error("Can't compile src file, please compile manually.");
+		} else {
+			Util.Print("Source file is compiled successfully.");
+
+			classFile = new File(baseProgram.replace(".java", ".class"));
+			try {
+				FileUtils.copyFile(classFile, new File(MutationSystem.CLASS_PATH + separator + classFile.getName()));
+			} catch (IOException e) {
+
+				e.printStackTrace();
+			}
+		}
+
+		try {
+			baseProgramClazz = new OriginalLoader().loadClass(classFile.getName().replace(".class", ""));
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+		System.out.println(classFile.getName() + " loaded successfully");
+
 	}
 
 	@SuppressWarnings("unchecked")
