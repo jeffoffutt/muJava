@@ -26,7 +26,7 @@ public class BubbleSortSpecificationProvider implements SpecificationProvider {
 	 */
 
 	@Override
-	public boolean testForAbsoluteCorrectness(Object mutantTestResult, Object specification) {
+	public boolean testAgainstSpecification(Object mutantTestResult, Object specification) {
 
 		for (int index = 0; index < ((int[]) mutantTestResult).length; index++) {
 

@@ -37,11 +37,18 @@ import mujava.cli.runmutes;
  */
 public class Plugin {
 
-	private static final int ABSOLUTE_CORRECTNESS_TEST_PASSED = 0;
+/*	private static final int ABSOLUTE_CORRECTNESS_TEST_PASSED = 0;
 	private static final int RELATIVE_CORRECTNESS_TEST_PASSED = 1;
 	private static final int STRICT_RELATIVE_CORRECTNESS_TEST_PASSED = 2;
-	private static final int NONE_OF_THE_CORRECTNESS_TEST_PASSED = -1;
+	private static final int NONE_OF_THE_CORRECTNESS_TEST_PASSED = -1;*/
 
+	private static final int INCORRECT_MUTANT = -1;
+	private static final int NOT_TESTED_MUTANT = 0;
+	private static final int EQUALLY_CORRECT_MUTANT = 1;
+	private static final int RELATIVELY_CORRECT_MUTANT = 2;
+	private static final int STRICTLY_RELATIVELY_CORRECT_MUTANT = 3;
+	private static final int ABSOLUTELY_CORRECT_MUTANT=100;
+	
 	private static String operatorString;
 	private static String baseProgram;
 	private static String testOracle;
@@ -55,6 +62,8 @@ public class Plugin {
 
 	private static Class<? extends Object> baseProgramClazz = null;
 	private static Object baseProgramClassObject = null;
+
+	private static int maxExecutionTime = 2000;
 
 	private static void parseArgs(String[] args) {
 
@@ -155,6 +164,7 @@ public class Plugin {
 
 	public static void main(String[] args) {
 
+		Thread.currentThread().setName("Main-Thread");
 		parseArgs(args);
 
 		createTestSession();
@@ -174,7 +184,7 @@ public class Plugin {
 	}
 
 	private static void invokeMutantMethods() {
-		Parameter[] parameters = null;
+		//Parameter[] parameters = null;
 
 		try {
 			combinedMutantClassObject = combinedMutantsClazz.newInstance();
@@ -187,13 +197,16 @@ public class Plugin {
 		SpecificationProvider specs = new BubbleSortSpecificationProvider();
 		DataProvider dataSet = new BubbleSortDataProvider();
 
+		List<String> strictlyRelativelyCorrectMutants= new ArrayList<String>();
+		List<String> absolutelyCorrectMutants= new ArrayList<String>();
+		
 		for (Method method : combinedMutantsClazz.getMethods()) {
 
 			if (method.getDeclaringClass().equals(combinedMutantsClazz)) {
-				System.out.println("Method name: " + method.getName()
-						+ " found in CombinedMutants.class! Check for absolute and relative correctness.");
+				System.out.println("\n\nMutant method : " + method.getName()
+						+ " found in CombinedMutants.class! Checking for strict relative correctness...");
 
-				if (parameters == null) {
+				/*if (parameters == null) {
 					parameters = method.getParameters();
 
 					for (Parameter parameter : parameters) {
@@ -201,37 +214,53 @@ public class Plugin {
 					}
 
 				}
-
-				try {
+*/
 
 					switch (doCorrectnessAnalysis(method, dataSet.provideData(), specs)) {
 
-					case ABSOLUTE_CORRECTNESS_TEST_PASSED:
+					case STRICTLY_RELATIVELY_CORRECT_MUTANT:
+						System.out.println(method.getName()+ " selected by Strict relative correctness test");
+						strictlyRelativelyCorrectMutants.add(method.getName());
 						break;
-					case STRICT_RELATIVE_CORRECTNESS_TEST_PASSED:
+					case ABSOLUTELY_CORRECT_MUTANT:
+						System.out.println(method.getName()+ " selected by absolute correctness test");
+						absolutelyCorrectMutants.add(method.getName());
 						break;
-					case RELATIVE_CORRECTNESS_TEST_PASSED:
-						break;
+					default:
+						System.out.println(method.getName()+ " rejected by Strict relative correctness test");
 					}
 					// TODO need to gracefully handle the runtime exceptions
 					// or infinite loops that this method may end up into
 					// due to mutation
 
-				} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-					System.out.println(method.getName() + ":: mutant resulted into exception! Rejecting mutant!!!");
-				}
 
 			} else {
 				System.out.println("Method name: " + method.getName() + " found in "
 						+ method.getDeclaringClass().getName() + ". Do Nothing!");
 			}
 		}
+		
+		System.out.println("\n\n\n########################################################################");
+		System.out.println("Mutants that were selected by strict relative correctness test are -");
+		int count = 1;
+		for(String mutant:strictlyRelativelyCorrectMutants){
+			System.out.println(count+". "+mutant);
+			count++;
+		}
+		System.out.println("\n");
+		System.out.println("Mutants that were selected by absolute correctness test are -");
+		count = 1;
+		for(String mutant:absolutelyCorrectMutants){
+			System.out.println(count+". "+mutant);
+			count++;
+		}
+		System.out.println("\n\n\n########################################################################");
 	}
-
+/*
 	private static int doCorrectnessAnalysis(Method method, List<Object> dataSet, SpecificationProvider specs)
-			throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+			throws MutantRejectedException {
 
-		Object result = null;
+		Object mutantTestResult = null;
 		boolean absolutelyCorretMutant = true;
 		boolean relativelyCorrectMutant = true;
 		boolean strictlyRelativelyCorrectMutant = true;
@@ -244,46 +273,133 @@ public class Plugin {
 				for (int i = 0; i < intArray.length; i++) {
 					intArray[i] = ((Integer[]) data)[i];
 				}
-				result = method.invoke(combinedMutantClassObject, intArray);
 
-				int[] specificationArray = (int[]) specs.provideSpecification(intArray);
+				// mutantTestResult = method.invoke(combinedMutantClassObject,
+				// intArray);
 
-				if (absolutelyCorretMutant) {
-					absolutelyCorretMutant = specs.testForAbsoluteCorrectness(result, specificationArray);
+				// Threaded execution for mutant method invocation
+				MethodInvoker mutantMethodInvoker = new MethodInvoker(method, combinedMutantClassObject, true,
+						intArray);
+				Thread mutantThread = new Thread(mutantMethodInvoker);
+
+				try {
+					System.out.println("waiting on " + mutantMethodInvoker);
+					synchronized (mutantMethodInvoker) {
+						mutantThread.setDaemon(true);
+						mutantThread.start();
+						mutantMethodInvoker.wait(maxExecutionTime);
+					}
+				} catch (InterruptedException e) {
+					e.printStackTrace();
 				}
 
-				if (strictlyRelativelyCorrectMutant) {
+				// Threaded execution ends
 
-					for (Method basePMethod : baseProgramClazz.getMethods()) {
+				if (mutantMethodInvoker.objectReturned != null) {
+					mutantTestResult = mutantMethodInvoker.objectReturned;
 
-						if (method.getName().contains(basePMethod.getName())
-								&& method.getReturnType().equals(basePMethod.getReturnType())) {
+					int[] specificationArray = (int[]) specs.provideSpecification(intArray);
 
-							int[] baseProgramResult = (int[]) basePMethod.invoke(baseProgramClassObject, intArray);
-							strictlyRelativelyCorrectMutant = specs.testForStrictlyRelativeCorrectness(result,
-									baseProgramResult, specificationArray);
+					if (absolutelyCorretMutant) {
+						absolutelyCorretMutant = specs.testForAbsoluteCorrectness(mutantTestResult, specificationArray);
+					}
+
+					if (strictlyRelativelyCorrectMutant) {
+
+						for (Method basePMethod : baseProgramClazz.getMethods()) {
+
+							if (method.getName().contains(basePMethod.getName())
+									&& method.getReturnType().equals(basePMethod.getReturnType())) {
+
+								int[] baseProgramResult = null;
+								try {
+									// baseProgramResult = (int[])
+									// basePMethod.invoke(baseProgramClassObject,
+									// intArray);
+
+									// Threaded execution for base program
+									// method
+									// invocation
+									MethodInvoker baseProgramMethodInvoker = new MethodInvoker(method,
+											combinedMutantClassObject, true, intArray);
+									Thread baseProgramThread = new Thread(baseProgramMethodInvoker);
+
+									try {
+
+										synchronized (baseProgramMethodInvoker) {
+											baseProgramThread.setDaemon(true);
+											baseProgramThread.start();
+											baseProgramMethodInvoker.wait(maxExecutionTime);
+										}
+										// Thread.sleep(maxExecutionTime);
+									} catch (InterruptedException e) {
+										e.printStackTrace();
+									}
+
+									if (baseProgramMethodInvoker.objectReturned != null) {
+										baseProgramResult = (int[]) baseProgramMethodInvoker.objectReturned;
+									}
+									// Threaded execution ends
+
+								} catch (Exception e) {
+
+									strictlyRelativelyCorrectMutant = true;
+								}
+
+								strictlyRelativelyCorrectMutant = specs.testForStrictlyRelativeCorrectness(
+										mutantTestResult, baseProgramResult, specificationArray);
+							}
+
 						}
+
+						// strictlyRelativelyCorrectMutant =
+						// specs.testForStrictlyRelativeCorrectness(mutantTestResult,
+						// baseProgramResult, specification)
 
 					}
 
-					// strictlyRelativelyCorrectMutant =
-					// specs.testForStrictlyRelativeCorrectness(mutantTestResult,
-					// baseProgramResult, specification)
+					if (relativelyCorrectMutant) {
+						// relativelyCorrectMutant =
+						// specs.testForStrictlyRelativeCorrectness(mutantTestResult,
+						// baseProgramResult, specification);
+					}
 
+				} else {
+					if (mutantThread.isAlive()) {
+						System.out.println(method.getName() + " has been executing more than " + maxExecutionTime
+								+ "ms. Rejecting it.");
+					}
+					break;
 				}
-
-				if (relativelyCorrectMutant) {
-					// relativelyCorrectMutant =
-					// specs.testForStrictlyRelativeCorrectness(mutantTestResult,
-					// baseProgramResult, specification);
-				}
-
 				// correctness=doCorrectnessAnalysis(intArray, result, specs);
 			} else {
 				Object specificationArray = specs.provideSpecification(data);
-				result = method.invoke(combinedMutantClassObject, data);
+				// mutantTestResult = method.invoke(combinedMutantClassObject,
+				// data);
+
+				// Threaded execution for mutant method invocation
+				MethodInvoker mutantMethodInvoker = new MethodInvoker(method, combinedMutantClassObject, true, data);
+				Thread mutantThread = new Thread(mutantMethodInvoker);
+
+				try {
+					synchronized (mutantMethodInvoker) {
+						mutantThread.setDaemon(true);
+						mutantThread.start();
+						mutantMethodInvoker.wait(maxExecutionTime);
+					}
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+
+				if (mutantMethodInvoker.objectReturned != null) {
+					mutantTestResult = mutantMethodInvoker.objectReturned;
+				} else {
+
+				}
+				// Threaded execution ends
+
 				if (absolutelyCorretMutant) {
-					absolutelyCorretMutant = specs.testForAbsoluteCorrectness(result, specificationArray);
+					absolutelyCorretMutant = specs.testForAbsoluteCorrectness(mutantTestResult, specificationArray);
 				}
 				// correctness=doCorrectnessAnalysis(data, result, specs);
 			}
@@ -293,33 +409,213 @@ public class Plugin {
 			}
 		}
 
-		/*
+		
 		 * if (absolutelyCorretMutant) { System.out.println("Mutant " +
 		 * method.getName() + " selected by Absolute correctness test"); return
 		 * ABSOLUTE_CORRECTNESS_TEST_PASSED; } else
-		 */
+		 
 		if (strictlyRelativelyCorrectMutant) {
 			System.out.println("Mutant " + method.getName() + " selected by Strict relative correctness test");
 			return STRICT_RELATIVE_CORRECTNESS_TEST_PASSED;
 		}
 		return NONE_OF_THE_CORRECTNESS_TEST_PASSED;
-		/*
+		
 		 * else if (relativelyCorrectMutant) { System.out.println("Mutant " +
 		 * method.getName() +
 		 * " passed relative correctness but failed strict relative correctness. So rejecting it."
 		 * ); return false; }
-		 */
+		 
 		// boolean relativelyCorrectMutant =
 		// specs.testForRelativeCorrectness(testResult, baseProgramResult,
 		// specificationArray);
-		/*
+		
 		 * Object specResult = specs.provideSpecification(testData);
 		 * 
 		 * if(specs.compare(specResult, testResult)!= 0){
 		 * 
 		 * } else{ System.out.println(
 		 * "Mutant Passed Absolute correctness test!!!"); }
-		 */
+		 
+	}
+
+*/	
+	
+	
+	private static int doCorrectnessAnalysis(Method method, List<Object> dataSet, SpecificationProvider specs){
+		int presentCorrectnessStatus = NOT_TESTED_MUTANT;
+		
+		int iteration = 0;
+		boolean isFinalTest = false;
+		int correctnessScore =0;
+		for(Object data: dataSet){			
+			iteration++;
+			
+			if(iteration == dataSet.size()){
+				isFinalTest = true;
+			}
+				
+			int[] intArray;
+			int[] intArrayCloneForMutant;
+			int[] intArrayCloneForBaseProgram;
+			
+			if (data instanceof Integer[]) {								
+					Object mutantTestResultObject=null;					
+					Object baseProgramTestResultObject=null;
+					boolean mutantTestResult = false;
+					boolean baseProgramTestResult = false;
+					
+					intArray = new int[((Integer[]) data).length];
+					for (int i = 0; i < intArray.length; i++) {
+						intArray[i] = ((Integer[]) data)[i];
+					}
+				
+					intArrayCloneForMutant= intArray.clone();
+					intArrayCloneForBaseProgram= intArray.clone();
+					
+					System.out.println("Test Data: "+ printIntegerArray(intArray));
+				
+					// Threaded execution for mutant method invocation
+					MethodInvoker mutantMethodInvoker = new MethodInvoker(method, combinedMutantClassObject, true,
+							intArrayCloneForMutant);
+					Thread mutantThread = new Thread(mutantMethodInvoker);
+	
+					try {
+						synchronized (mutantMethodInvoker) {
+							mutantThread.setDaemon(true);
+							mutantThread.start();
+							//System.out.println("waiting on " + mutantMethodInvoker);
+							mutantMethodInvoker.wait(maxExecutionTime);
+						}
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+					// Threaded execution ends
+			
+					
+					int[] specificationArray = (int[]) specs.provideSpecification(intArray);
+					
+					mutantTestResultObject = mutantMethodInvoker.objectReturned;
+					if (mutantTestResultObject != null) {												
+						
+							mutantTestResult = specs.testAgainstSpecification(mutantTestResultObject, specificationArray);
+							System.out.println("Mutant result:: "+ printIntegerArray((int[])mutantTestResultObject));
+							if(mutantTestResult){
+								correctnessScore++;
+							}
+					}else{
+						System.out.println("Mutant result:: null");
+					}			
+			
+					
+					// Threaded execution for base program method invocation
+					MethodInvoker baseProgramMethodInvoker = new MethodInvoker(method,
+							baseProgramClassObject, false, intArrayCloneForBaseProgram);
+					Thread baseProgramThread = new Thread(baseProgramMethodInvoker);
+
+					try {
+
+						synchronized (baseProgramMethodInvoker) {
+							baseProgramThread.setDaemon(true);
+							baseProgramThread.start();
+							baseProgramMethodInvoker.wait(maxExecutionTime);
+						}
+						// Thread.sleep(maxExecutionTime);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+
+					baseProgramTestResultObject = baseProgramMethodInvoker.objectReturned;
+					if ( baseProgramTestResultObject != null) {
+						baseProgramTestResult = specs.testAgainstSpecification(baseProgramTestResultObject, specificationArray);
+						System.out.println("Base Program result:: "+ printIntegerArray((int[])baseProgramTestResultObject));
+					}else{
+						System.out.println("Base Program result:: null");
+					}		
+					// Threaded execution ends
+					
+			presentCorrectnessStatus =calculateNewCorrectnessStatus(presentCorrectnessStatus, baseProgramTestResult, mutantTestResult, isFinalTest);
+			if(presentCorrectnessStatus == INCORRECT_MUTANT || presentCorrectnessStatus == STRICTLY_RELATIVELY_CORRECT_MUTANT){
+				
+				if(correctnessScore == dataSet.size()){
+					presentCorrectnessStatus = ABSOLUTELY_CORRECT_MUTANT;
+				}
+				return presentCorrectnessStatus;
+			}
+			
+			}
+			}
+		return presentCorrectnessStatus;
+	}
+	
+	private static String printIntegerArray(int[] array){
+		StringBuilder sb = new StringBuilder("[ ");
+		if (array == null){
+			return "null";
+		}
+		
+		for (int i=0;i<array.length;i++){
+			sb.append(array[i]+" ");
+		}
+		sb.append("]");
+		return sb.toString();
+	}
+	
+	private static int calculateNewCorrectnessStatus(int presentCorrectnessStatus, boolean baseProgramResult,
+			boolean mutantTestResult, boolean isFinalTest) {
+		switch (presentCorrectnessStatus) {
+		case NOT_TESTED_MUTANT:
+		case EQUALLY_CORRECT_MUTANT:
+			if (baseProgramResult && mutantTestResult) {
+				return EQUALLY_CORRECT_MUTANT;
+			} else if (!baseProgramResult && !mutantTestResult) {
+				return EQUALLY_CORRECT_MUTANT;
+			} else if (baseProgramResult && !mutantTestResult) {
+				return INCORRECT_MUTANT;
+			} else if (!baseProgramResult && mutantTestResult) {
+				if (isFinalTest) {
+					return STRICTLY_RELATIVELY_CORRECT_MUTANT;
+				} else {
+					return RELATIVELY_CORRECT_MUTANT;
+				}
+			}
+			break;
+
+		case RELATIVELY_CORRECT_MUTANT:
+			if (baseProgramResult && mutantTestResult) {
+				if (isFinalTest) {
+					return STRICTLY_RELATIVELY_CORRECT_MUTANT;
+				}else{
+					return RELATIVELY_CORRECT_MUTANT;
+				}					
+			} else if (!baseProgramResult && !mutantTestResult) {
+				if (isFinalTest) {
+					return STRICTLY_RELATIVELY_CORRECT_MUTANT;
+				}else{
+					return RELATIVELY_CORRECT_MUTANT;
+				}
+			} else if (baseProgramResult && !mutantTestResult) {
+				return INCORRECT_MUTANT;
+			} else if (!baseProgramResult && mutantTestResult) {
+				if (isFinalTest) {
+					return STRICTLY_RELATIVELY_CORRECT_MUTANT;
+				} else {
+					return RELATIVELY_CORRECT_MUTANT;
+				}
+			}
+
+			break;
+
+		case STRICTLY_RELATIVELY_CORRECT_MUTANT:
+			throw new RuntimeException(
+					"Invalid state. Strictly relatively correct mutant cannot be further tested for correctness.");
+
+		case INCORRECT_MUTANT:
+			throw new RuntimeException("Invalid state. Incorrect mutant cannot be further tested for correctness.");
+
+		default:
+			return INCORRECT_MUTANT;
+		}
+		return INCORRECT_MUTANT;
 	}
 
 	@SuppressWarnings("unchecked")

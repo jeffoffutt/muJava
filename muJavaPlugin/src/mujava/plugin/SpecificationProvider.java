@@ -20,7 +20,7 @@ public interface SpecificationProvider {
 	 */
 	public Object provideSpecification(Object args);
 
-	public boolean testForAbsoluteCorrectness(Object mutantTestResult, Object specification);
+	public boolean testAgainstSpecification(Object mutantTestResult, Object specification);
 
 	public boolean testForStrictlyRelativeCorrectness(Object mutantTestResult, Object baseProgramResult, Object specification);
 
