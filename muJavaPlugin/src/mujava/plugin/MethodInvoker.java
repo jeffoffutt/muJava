@@ -1,6 +1,5 @@
 package mujava.plugin;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 public class MethodInvoker implements Runnable {
@@ -21,10 +20,10 @@ public class MethodInvoker implements Runnable {
 	@Override
 	public void run() {
 
-		try {
+		try {					
 			objectReturned = method.invoke(invokerObject, args);
 		} catch (Exception e) {
-			
+			e.printStackTrace();
 			/*if (isMutant) {
 				System.out.println(method.getName() + ":: mutant resulted into exception! Rejecting mutant!!!");
 			} else {
