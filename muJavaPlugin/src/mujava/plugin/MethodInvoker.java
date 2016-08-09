@@ -23,7 +23,7 @@ public class MethodInvoker implements Runnable {
 		try {					
 			objectReturned = method.invoke(invokerObject, args);
 		} catch (Exception e) {
-			e.printStackTrace();
+			//e.printStackTrace();
 			/*if (isMutant) {
 				System.out.println(method.getName() + ":: mutant resulted into exception! Rejecting mutant!!!");
 			} else {

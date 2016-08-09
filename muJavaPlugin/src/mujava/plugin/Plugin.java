@@ -6,11 +6,7 @@ import static util.Constants.*;
 import java.io.File;
 
 import analyzer.CorrectnessAnalyzer;
-import bubblesort.test.BubbleSortDataProvider;
-import bubblesort.test.BubbleSortSpecificationProvider;
 
-import uglynumber.test.UglyNumberDataProvider;
-import uglynumber.test.UglyNumberSpecificationProvider;
 import util.CustomCompiler;
 import util.FileUtil;
 import util.MuJavaWrapper;
@@ -20,24 +16,32 @@ import util.MuJavaWrapper;
  */
 public class Plugin {
 
-	private static String operatorString;
-	private static String baseProgram;
-	private static File combinedMutantFile;
+	private  DataProvider dataSet;
+	private  SpecificationProvider specs;
+	
+	private  String operatorString;
+	private  String baseProgram;
+	private  File combinedMutantFile;
 
-	private static Class<? extends Object> combinedMutantsClazz = null;
-	private static Class<? extends Object> baseProgramClazz = null;
+	private  Class<? extends Object> combinedMutantsClazz = null;
+	private  Class<? extends Object> baseProgramClazz = null;
 
-	private static CustomCompiler compiler;
-	private static MuJavaWrapper muJavaWrapper = null;
-	private static FileUtil fileUtil;
-	private static CorrectnessAnalyzer analyzer;
+	private  CustomCompiler compiler;
+	private  MuJavaWrapper muJavaWrapper = null;
+	private  FileUtil fileUtil;
+	private  CorrectnessAnalyzer analyzer;
 
-	static {
+
+	public Plugin(SpecificationProvider specs, DataProvider dataSet){
+
 		compiler = new CustomCompiler();
 		fileUtil = new FileUtil();
+		
+		this.specs = specs;
+		this.dataSet = dataSet;
 	}
-
-	private static void parseArgs(String[] args) {
+	
+	private void parseArgs(String[] args) {
 
 		if (args == null || args.length != 3) {
 			throw new IllegalArgumentException("Please provide session name and list of mutation operators as argument."
@@ -73,27 +77,27 @@ public class Plugin {
 
 	}
 
-	private static void generateMutantsUsingMuJava() {
+	private void generateMutantsUsingMuJava() {
 
 		muJavaWrapper.setMujavaEnv();
 		muJavaWrapper.createTestSession();
 		muJavaWrapper.generateMutants();
 	}
 
-	private static void combineMutantMethodsInSingleJavaFile() {
+	private void combineMutantMethodsInSingleJavaFile() {
 		combinedMutantFile = fileUtil.combineMutants(baseProgram, COMBINED_MUTANTS_FILE_NAME);
 	}
 
 	@SuppressWarnings("unchecked")
-	private static void compileAll() {
+	private void compileAll() {
 		combinedMutantsClazz = compiler.compile(combinedMutantFile.getAbsolutePath());
 		baseProgramClazz = compiler.compile(baseProgram);
 	}
 
-	private static void analyze() {
+	private void analyze() {
 
-		SpecificationProvider specs = new BubbleSortSpecificationProvider();
-		DataProvider dataSet = new BubbleSortDataProvider();
+		//specs = new BubbleSortSpecificationProvider();
+		//dataSet = new BubbleSortDataProvider();
 
 		//SpecificationProvider specs = new UglyNumberSpecificationProvider();
 		//DataProvider dataSet = new UglyNumberDataProvider();
@@ -104,8 +108,11 @@ public class Plugin {
 
 	}
 
-	public static void main(String[] args) {
+	
+	public void execute(String[] args) {
 
+		//Plugin plugin = new Plugin();
+		
 		Thread.currentThread().setName("Main-Thread");
 
 		parseArgs(args);
