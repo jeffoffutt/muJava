@@ -437,8 +437,13 @@ public abstract class MutantsGenerator
 
          String[] pars = new String[v.size()+2];
 
+         /* 08/02/2016 Haoyuan Sun modified:
+          * added system classpath
+          */
          pars[0] = "-classpath";
-         pars[1] = MutationSystem.CLASS_PATH;
+         pars[1] = System.getProperty("java.class.path") + System.getProperty("path.separator") +
+                     MutationSystem.CLASS_PATH;
+
          for (int j=0; j<v.size(); j++)
          {
             pars[2+j] = v.get(j).toString();
