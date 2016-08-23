@@ -15,13 +15,11 @@
  */ 
 package mujava.op.basic;
 
+import mujava.op.util.MethodLevelMutator;
 import openjava.mop.*;
 import openjava.ptree.*;
 
 import java.io.*;
-import java.util.ArrayList;
-
-import com.sun.tools.javac.resources.legacy;
 
 
 /**

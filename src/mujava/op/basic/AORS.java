@@ -15,6 +15,7 @@
  */ 
 package mujava.op.basic;
 
+import mujava.op.util.MethodLevelMutator;
 import openjava.mop.*;
 import openjava.ptree.*;
 import java.io.*;
