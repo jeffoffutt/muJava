@@ -41,6 +41,10 @@
  * </p>
  * @author Yu-Seung Ma
  * @version 1.0
+ * 
+ * Taking out aor_flag for not clear about the reason of using it.
+ * Lin Deng, Aug 23
+ * 
 */
 package mujava;
 
@@ -158,7 +162,7 @@ public class TraditionalMutantsGenerator extends MutantsGenerator
             try
             {
                mujava.op.util.Mutator mutant_op;
-               boolean AOR_FLAG = false;
+//               boolean AOR_FLAG = false;
      
                try
                {
@@ -182,7 +186,7 @@ public class TraditionalMutantsGenerator extends MutantsGenerator
                if (hasOperator (traditionalOp, "AORB") )
                {
                   Debug.println("  Applying AOR-Binary ... ... ");
-                  AOR_FLAG = true;
+//                  AOR_FLAG = true;
                   mutant_op = new AORB(file_env, cdecl, comp_unit);
                   comp_unit.accept(mutant_op);
                }
@@ -190,7 +194,7 @@ public class TraditionalMutantsGenerator extends MutantsGenerator
                if (hasOperator (traditionalOp, "AORS") )
                {
                   Debug.println("  Applying AOR-Short-Cut ... ... ");
-                  AOR_FLAG = true;
+//                  AOR_FLAG = true;
                   mutant_op = new AORS(file_env, cdecl, comp_unit);
                   comp_unit.accept(mutant_op);
                }
@@ -199,7 +203,7 @@ public class TraditionalMutantsGenerator extends MutantsGenerator
                {
                   Debug.println("  Applying AOD-Normal-Unary ... ... ");
                   mutant_op = new AODU(file_env, cdecl, comp_unit);
-                  ((AODU)mutant_op).setAORflag(AOR_FLAG);
+//                  ((AODU)mutant_op).setAORflag(AOR_FLAG);
                   comp_unit.accept(mutant_op);
                }
           
@@ -214,7 +218,7 @@ public class TraditionalMutantsGenerator extends MutantsGenerator
                {
                   Debug.println("  Applying AOI-Normal-Unary ... ... ");
                   mutant_op = new AOIU(file_env,cdecl,comp_unit);
-                  ((AOIU)mutant_op).setAORflag(AOR_FLAG);
+//                  ((AOIU)mutant_op).setAORflag(AOR_FLAG);
                   comp_unit.accept(mutant_op);
                }
                

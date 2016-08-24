@@ -46,14 +46,10 @@ public class Mutator extends mujava.openjava.extension.VariableBinder
       OJClass result = null;
       try 
       {
-    	 //System.out.println("p: " + p);
-    	// System.out.println("getEnvironment() : " + getEnvironment().toString());
 	     result = p.getType( getEnvironment() );
-	     
       } catch ( Exception e ) {	  
-  	       throw new ParseTreeException( e );
     	  // do not throw the exception; otherwise, the program stops generating mutants
-  	      //System.out.println("Exception: " + e.getStackTrace().toString());
+  	      System.out.println("Exception: " + e.getStackTrace().toString());
       }
      
       if (result == null) 

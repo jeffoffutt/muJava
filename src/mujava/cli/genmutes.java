@@ -43,6 +43,7 @@ import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 
 import mujava.MutationSystem;
@@ -59,7 +60,7 @@ public class genmutes {
 	public static void main(String[] args) throws Exception {
 		// System.out.println("test");
 		genmutesCom jct = new genmutesCom();
-		String[] argv = { "-all", "-debug", "Flower" }; // development use, when release,
+		String[] argv = { "-sdl", "-debug", "cal" }; // development use, when release,
 												// comment out this line
 		JCommander jCommander = new JCommander(jct, args);
 
@@ -105,15 +106,31 @@ public class genmutes {
 
 		}
 
+		
 		// get all files in the session
-		String[] file_list = new String[1];
-		// if(jct.getD())
-		// {
+		File[] file_list = new File[1];
+
 		File sessionFolder = new File(muJavaHomePath + "/" + sessionName + "/src");
-		File[] listOfFilesInSession = sessionFolder.listFiles();
-		file_list = new String[listOfFilesInSession.length];
-		for (int i = 0; i < listOfFilesInSession.length; i++) {
-			file_list[i] = listOfFilesInSession[i].getName();
+//		String[] extensions = new String[] { "txt", "jsp" };
+		String[] extensions = new String[] { "java" };
+		
+		List<File> files = (List<File>) FileUtils.listFiles(sessionFolder, extensions, true);
+		
+//		for(File file : files)
+//		{
+//			System.out.println(file.getPath());
+//			System.out.println(file.getName());		
+//		}
+//		
+//		return;
+	
+	
+		
+//		File[] listOfFilesInSession = sessionFolder.listFiles();
+		
+		file_list = new File[files.size()];
+		for (int i = 0; i < files.size(); i++) {
+			file_list[i] = files.get(i);
 		}
 
 
@@ -245,6 +262,8 @@ public class genmutes {
 		generateMutants(file_list, ops);
 
 		//System.exit(0);
+		
+
 	}
 
 	private static void setJMutationStructureAndSession(String sessionName) {
@@ -260,22 +279,30 @@ public class genmutes {
 
 	}
 
-	public static void generateMutants(String[] file_list, HashMap<String, List<String>> traditional_ops) {
+
+	
+	public static void generateMutants(File[] file_list, HashMap<String, List<String>> traditional_ops) {
 
 		for (int i = 0; i < file_list.length; i++) {
 			// file_name = ABSTRACT_PATH - MutationSystem.SRC_PATH
 			// For example: org/apache/bcel/Class.java
-			String file_name = file_list[i];
+			File file = file_list[i];
 			try {
-				System.out.println((i + 1) + " : " + file_name);
+				System.out.println((i + 1) + " : " + file.getName());
 				// [1] Examine if the target class is interface or abstract
 				// class
 				// In that case, we can't apply mutation testing.
 
-				// Generate class name from file_name
-				String temp = file_name.substring(0, file_name.length() - ".java".length());
+				
+				// get an absolute path
+				String fileFullPath = file.getPath();
+				// trim down system path
+				String intermediatePath = fileFullPath.replace(MutationSystem.SRC_PATH+"/","");
+				// trim down .java extension
+				String temp = intermediatePath.substring(0, intermediatePath.length() - ".java".length());
+				
 				String class_name = "";
-
+				// replace symbols
 				for (int j = 0; j < temp.length(); j++) {
 					if ((temp.charAt(j) == '\\') || (temp.charAt(j) == '/')) {
 						class_name = class_name + ".";
@@ -284,27 +311,28 @@ public class genmutes {
 					}
 				}
 
-
+				// need to get package name and file name without .java
+				// e.g. computeGPA.gpa
 				int class_type = MutationSystem.getClassType(class_name);
 
 				if (class_type == MutationSystem.NORMAL) { // do nothing
 				} else if (class_type == MutationSystem.MAIN) {
-					System.out.println(" -- " + file_name + " class contains 'static void main()' method.");
+					System.out.println(" -- " + file.getName() + " class contains 'static void main()' method.");
 					System.out
 							.println("    Pleas note that mutants are not generated for the 'static void main()' method");
 				} else {
 					switch (class_type) {
 					case MutationSystem.INTERFACE:
-						System.out.println(" -- Can't apply because " + file_name + " is 'interface' ");
+						System.out.println(" -- Can't apply because " + file.getName() + " is 'interface' ");
 						break;
 					case MutationSystem.ABSTRACT:
-						System.out.println(" -- Can't apply because " + file_name + " is 'abstract' class ");
+						System.out.println(" -- Can't apply because " + file.getName() + " is 'abstract' class ");
 						break;
 					case MutationSystem.APPLET:
-						System.out.println(" -- Can't apply because " + file_name + " is 'applet' class ");
+						System.out.println(" -- Can't apply because " + file.getName() + " is 'applet' class ");
 						break;
 					case MutationSystem.GUI:
-						System.out.println(" -- Can't apply because " + file_name + " is 'GUI' class ");
+						System.out.println(" -- Can't apply because " + file.getName() + " is 'GUI' class ");
 						break;
 					case -1:
 						System.out.println(" -- Can't apply because class not found ");
@@ -315,10 +343,12 @@ public class genmutes {
 					continue;
 				}
 
+				
+		
 				// [2] Apply mutation testing
-				setMutationSystemPathFor(file_name);
+				setMutationSystemPathFor(intermediatePath);
 
-				File original_file = new File(MutationSystem.SRC_PATH, file_name);
+				File original_file = new File(MutationSystem.SRC_PATH, intermediatePath);
 
 				String[] opArray = traditional_ops.keySet().toArray(new String[0]);
 
@@ -326,7 +356,7 @@ public class genmutes {
 				tmGenEngine = new TraditionalMutantsGeneratorCLI(original_file, opArray);
 				tmGenEngine.makeMutants();
 				tmGenEngine.compileMutants();
-				
+								
 			      // Lin add printing total mutants
 				// get all file names
 				File folder = new File(MutationSystem.MUTANT_HOME + "/" + class_name + "/" + MutationSystem.TM_DIR_NAME);
@@ -356,24 +386,24 @@ public class genmutes {
 				
 			      System.out
 					.println("------------------------------------------------------------------");
-			      System.out.println("Total mutants gnerated for " + file_name +": " + Integer.toString(total_mutants));
+			      System.out.println("Total mutants gnerated for " + file.getName() +": " + Integer.toString(total_mutants));
 
-			      
+		      
 			      
 			} catch (OpenJavaException oje) {
-				System.out.println("[OJException] " + file_name + " " + oje.toString());
+				System.out.println("[OJException] " + file.getName() + " " + oje.toString());
 				// System.out.println("Can't generate mutants for " +file_name +
 				// " because OpenJava " + oje.getMessage());
 				deleteDirectory();
 			} catch (Exception exp) {
-				System.out.println("[Exception] " + file_name + " " + exp.toString());
+				System.out.println("[Exception] " + file.getName() + " " + exp.toString());
 				exp.printStackTrace();
 				// System.out.println("Can't generate mutants for " +file_name +
 				// " due to exception" + exp.getClass().getName());
 				// exp.printStackTrace();
 				deleteDirectory();
 			} catch (Error er) {
-				System.out.println("[Error] " + file_name + " " + er.toString());
+				System.out.println("[Error] " + file.getName() + " " + er.toString());
 				// System.out.println("Can't generate mutants for " +file_name +
 				// " due to error" + er.getClass().getName());
 				deleteDirectory();
@@ -387,7 +417,15 @@ public class genmutes {
 		// System.out.println(" All files are handled"); // need to say how many
 		// mutants are generated
 
+		
+		
 	}
+	
+	
+	
+	
+	
+	
 
 	static void deleteDirectory() {
 		File originalDir = new File(MutationSystem.MUTANT_HOME + "/" + MutationSystem.DIR_NAME + "/"
@@ -447,6 +485,12 @@ public class genmutes {
 		} catch (Exception e) {
 			System.err.println(e);
 		}
+		
+		
+		
+		
+		
+		
 	}
 
 }

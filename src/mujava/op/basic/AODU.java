@@ -26,11 +26,15 @@ import java.io.*;
  * </p> 
  * @author Yu-Seung Ma
  * @version 1.0
+ * 
+ * Taking out aor_flag for not clear about the reason of using it.
+ * Lin Deng, Aug 23
+ * 
   */
 
 public class AODU extends Arithmetic_OP
 {
-   boolean aor_flag = false;
+//   boolean aor_flag = false;
 
    public AODU(FileEnvironment file_env, ClassDeclaration cdecl, CompilationUnit comp_unit)
    {
@@ -41,15 +45,20 @@ public class AODU extends Arithmetic_OP
     * Set AOR flag 
     * @param b
     */
-   public void setAORflag(boolean b)
-   {
-      aor_flag = b;
-   }
+//   public void setAORflag(boolean b)
+//   {
+//      aor_flag = b;
+//   }
 
    public void visit( BinaryExpression p) throws ParseTreeException
    {
       // Examine equivalent
-      if (aor_flag && isArithmeticType(p)) 
+//      if (aor_flag && isArithmeticType(p)) 
+	   // why would it be equivalent if there are aor?
+	   // not clear about the reason for using the flag.
+	   // take it out.
+	   
+	   if (isArithmeticType(p))
       {
          if ( (p.getOperator() == BinaryExpression.MINUS) || 
               (p.getOperator() == BinaryExpression.PLUS)  ||

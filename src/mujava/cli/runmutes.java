@@ -41,6 +41,12 @@ import java.util.Vector;
 
 
 
+
+
+
+
+import org.apache.commons.io.FileUtils;
+
 import com.beust.jcommander.JCommander;
 
 import mujava.MutationSystem;
@@ -132,7 +138,7 @@ public class runmutes {
 	public static void main(String[] args) throws Exception {
 		runmutesCom jct = new runmutesCom();
 		// dev only
-		String[] argv = { "-all", "-fresh", "-debug", "for_oldTest", "testTimeout" ,"-timeout", "3" };
+		String[] argv = { "-all", "-fresh", "-debug", "testfolder.calTest3", "tool" ,"-timeout", "3" };
 
 		JCommander jCommander = new JCommander(jct, args);
 
@@ -142,6 +148,55 @@ public class runmutes {
 		String testSessionName = null;
 
 		muJavaHomePath = Util.loadConfig();
+		
+		// get all existing session name
+		File muJavaFolder = new File(muJavaHomePath);
+		// check if the config file has defined the correct folder
+		if (!muJavaFolder.isDirectory()) {
+			Util.Error("ERROR: cannot locate the folder specified in mujava.config");
+			return;
+		}
+		File[] listOfSessions = muJavaFolder.listFiles();
+		// null checking
+		// check the specified folder has files or not
+		if (listOfSessions==null)
+		{
+			Util.Error("ERROR: no files in the muJava home folder "+muJavaHomePath);
+			return;
+		}
+		List<String> fileNameList = new ArrayList<>();
+		for (File file : listOfSessions) {
+			fileNameList.add(file.getName());
+		}
+
+		
+		// get testSessionName
+		if (jct.getParameters().size() == 1) {
+			// read all test names
+			testSessionName = jct.getParameters().get(0);
+			
+		}
+		else {
+			if (jct.getParameters().size() > 2) {
+				Util.Error("incorrect parameters.");
+				return;
+			}
+
+			// set names
+			testSetName = jct.getParameters().get(0);
+			testSessionName = jct.getParameters().get(1);
+		}
+		
+		
+		
+		
+		// check if session is already created
+		if (!fileNameList.contains(testSessionName)) {
+			Util.Error("Session does not exist.");
+			return;
+		}
+		
+		
 		// check if debug mode
 		if (jct.isDebug()) {
 			Util.debug = true;
@@ -167,7 +222,9 @@ public class runmutes {
 		if (jct.getParameters().size() == 1) {
 			// read all test names
 			testSessionName = jct.getParameters().get(0);
-			File folder = new File(muJavaHomePath + "/" + testSessionName + "/testset");
+			setJMutationStructureAndSession(testSessionName);
+
+			File folder = new File(MutationSystem.TESTSET_PATH);
 			File[] listOfFiles = folder.listFiles();
 
 			for (File file : listOfFiles) {
@@ -190,49 +247,33 @@ public class runmutes {
 			// set names
 			testSetName = jct.getParameters().get(0);
 			testSessionName = jct.getParameters().get(1);
+			setJMutationStructureAndSession(testSessionName);
 
 			// make sure test file exists
-			File folder = new File(muJavaHomePath + "/" + testSessionName + "/testset");
-			File[] listOfFiles = folder.listFiles();
+			File folder = new File(MutationSystem.TESTSET_PATH);
+			
+			// file all class files (tests)
+			String[] extensions = new String[] { "class" };		
+			List<File> testFiles = (List<File>) FileUtils.listFiles(folder, extensions, true);
+			
+			File[] listOfFiles = new File[testFiles.size()];
+			for (int i = 0; i < testFiles.size(); i++) {
+				listOfFiles[i] = testFiles.get(i);
+			}
 			if (!hasTestFile(listOfFiles, testSetName)) {
 				Util.Error("can't find test file: " + testSetName);
 				return;
-			}
+			}			
+			
 		}
 
-		// get all existing session name
-		File folder = new File(muJavaHomePath);
-		// check if the config file has defined the correct folder
-		if (!folder.isDirectory()) {
-			Util.Error("ERROR: cannot locate the folder specified in mujava.config");
-			return;
-		}
-		File[] listOfFiles = folder.listFiles();
-		// null checking
-		// check the specified folder has files or not
-		if (listOfFiles==null)
-		{
-			Util.Error("ERROR: no files in the muJava home folder "+muJavaHomePath);
-			return;
-		}
-		List<String> fileNameList = new ArrayList<>();
-		for (File file : listOfFiles) {
-			fileNameList.add(file.getName());
-		}
 
-		// check if session is already created
-		if (!fileNameList.contains(testSessionName)) {
-			Util.Error("Session does not exist.");
-			return;
-		}
-
-		String[] file_list = new String[1];
-		File sessionFolder = new File(muJavaHomePath + "/" + testSessionName + "/classes");
-		File[] listOfFilesInSession = sessionFolder.listFiles();
-		file_list = new String[listOfFilesInSession.length];
-		for (int i = 0; i < listOfFilesInSession.length; i++) {
-			file_list[i] = listOfFilesInSession[i].getName();
-		}
+		// get all classes
+		File sessionFolder = new File(MutationSystem.CLASS_PATH);
+		
+		String[] extensions = new String[] { "class" };
+		List<File> files = (List<File>) FileUtils.listFiles(sessionFolder, extensions, true);
+	
 
 		if (jct.getP() > 0 && jct.getP() <= 1)
 			percentage = jct.getP();
@@ -350,7 +391,7 @@ public class runmutes {
 			typeList.add("ODL");
 		}
 
-		setJMutationStructureAndSession(testSessionName);
+//		setJMutationStructureAndSession(testSessionName);
 		// MutationSystem.recordInheritanceRelation(); // have this line will
 		// mess up things totally, need to check why!!!
 
@@ -372,22 +413,51 @@ public class runmutes {
 
 		String[] types = new String[typeList.size()];
 		types = typeList.toArray(types);
-		for (String str : file_list) {
-			targetClassName = str;
+		
+		
+		
+		for (File file : files) {
+			
+			// process file names
+			
+			// need to be testfolder.cal
+			// get an absolute path
+			String fileFullPath = file.getPath();
+			// trim down system path
+			String intermediatePath = fileFullPath.replace(MutationSystem.CLASS_PATH+"/","");
+			// trim down .java extension
+//			targetClassName = intermediatePath.substring(0, intermediatePath.length() - ".class".length());
+			
+			
+//			targetClassName
 
-			if (!targetClassName.contains(".class")) {
+			if (!intermediatePath.contains(".class")) {
 				continue;
 			}
 			// need to remove .class extension
-			if (targetClassName.contains(".class")) {
-				targetClassName = targetClassName.substring(0, targetClassName.length() - ".class".length());
+			if (intermediatePath.contains(".class")) {
+				targetClassName = intermediatePath.substring(0, intermediatePath.length() - ".class".length());
+			}
+			
+			// replace / to .
+			String class_name = "";
+			// replace symbols
+			for (int j = 0; j < targetClassName.length(); j++) {
+				if ((targetClassName.charAt(j) == '\\') || (targetClassName.charAt(j) == '/')) {
+					class_name = class_name + ".";
+				} else {
+					class_name = class_name + targetClassName.charAt(j);
+				}
 			}
 
 			if (isSingleTestSet)
-				runTests(targetClassName, testSetName, types, percentage, mode);
+				runTests(class_name, testSetName, types, percentage, mode);
 			else {
+				
+				// NEED TO TEST FOR MULTIPLE TEST FILES
+				
 				for (int i = 0; i < testSetList.size(); i++) {
-					runTests(targetClassName, testSetList.get(i), types, percentage, mode);
+					runTests(class_name, testSetList.get(i), types, percentage, mode);
 				}
 			}
 		}
@@ -401,7 +471,9 @@ public class runmutes {
 		if (listOfFiles == null)
 			throw new Exception("invalid test folder");
 		for (File file : listOfFiles) {
-			if (file.getName().equals(testSetName + ".class"))
+			String fileName = file.getPath().replace(MutationSystem.TESTSET_PATH+"/", "");
+			fileName = fileName.replace("/", ".");
+			if (fileName.equals(testSetName + ".class"))
 				return true;
 		}
 		return false;
@@ -422,7 +494,8 @@ public class runmutes {
 		ArrayList<String> methodNameList = new ArrayList<>();
 
 		for (File method : listOfMethods) {
-			methodNameList.add(method.getName());
+			if(method.isDirectory())
+				methodNameList.add(method.getName());
 		}
 
 		/*
