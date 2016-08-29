@@ -160,7 +160,7 @@ public class MutationSystem extends OJSystem
    * @return type of class ( types: interface, abstract, GUI, main, normal, applet )
    */
    public static int getClassType (String class_name)
-   {
+   {   
       try 
       {
          Class c = Class.forName (class_name);

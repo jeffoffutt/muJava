@@ -477,7 +477,6 @@ public class MutantsGenPanel extends JPanel
 			
             // [2] Apply mutation testing
             setMutationSystemPathFor(file_name);
-            
             //File[] original_files = new File[1];
             //original_files[0] = new File(MutationSystem.SRC_PATH,file_name);
             
