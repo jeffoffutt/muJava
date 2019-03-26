@@ -299,6 +299,8 @@ public class genmutes {
 				// trim down system path
 				String intermediatePath = fileFullPath.replace(MutationSystem.SRC_PATH+"/","");
 				// trim down .java extension
+				
+				intermediatePath = file.getName();
 				String temp = intermediatePath.substring(0, intermediatePath.length() - ".java".length());
 				
 				String class_name = "";
