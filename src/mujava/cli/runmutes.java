@@ -425,6 +425,7 @@ public class runmutes {
 			String fileFullPath = file.getPath();
 			// trim down system path
 			String intermediatePath = fileFullPath.replace(MutationSystem.CLASS_PATH+"/","");
+			intermediatePath = file.getName();
 			// trim down .java extension
 //			targetClassName = intermediatePath.substring(0, intermediatePath.length() - ".class".length());
 			
@@ -472,7 +473,8 @@ public class runmutes {
 			throw new Exception("invalid test folder");
 		for (File file : listOfFiles) {
 			String fileName = file.getPath().replace(MutationSystem.TESTSET_PATH+"/", "");
-			fileName = fileName.replace("/", ".");
+			//fileName = fileName.replace("/", ".");
+			fileName = file.getName();
 			if (fileName.equals(testSetName + ".class"))
 				return true;
 		}
